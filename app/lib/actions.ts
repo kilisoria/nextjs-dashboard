@@ -5,6 +5,7 @@ import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { signIn } from '@/auth';
 
 const InvoiceSchema = z.object({
   id: z.string(),
@@ -13,15 +14,6 @@ const InvoiceSchema = z.object({
   status: z.enum(['pending', 'paid']),
   date: z.string(),
 });
-
-/*
-
-  id: string;
-  customer_id: string;
-  amount: number;
-  status: 'pending' | 'paid';
-
-*/
 
 const CreateInvoice = InvoiceSchema.omit({ id: true, date: true });
 
@@ -84,5 +76,19 @@ export async function deleteInvoice(id: string) {
     return { message: 'Deleted Invoice.' };
   } catch (error) {
     return { message: 'Database Error: Failed to Delete Invoice.' };
+  }
+}
+
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    await signIn('credentials', Object.fromEntries(formData));
+  } catch (error) {
+    if ((error as Error).message.includes('CredentialsSignin')) {
+      return 'CredentialSignin';
+    }
+    throw error;
   }
 }
